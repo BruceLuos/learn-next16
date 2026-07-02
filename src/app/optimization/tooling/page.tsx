@@ -4,8 +4,9 @@ import { Callout } from "@/components/lesson/callout";
 import { KeyPoints } from "@/components/lesson/key-points";
 import { Demo } from "@/components/lesson/demo";
 import { ApiTable } from "@/components/lesson/api-table";
-import { P, H2, UL, LI, Lead, Source } from "@/components/lesson/typography";
+import { P, H2, H3, UL, LI, Lead, Source } from "@/components/lesson/typography";
 import { CodeBlock } from "@/components/code-block";
+import { McpErrorDemo } from "@/components/demos/mcp-error-demo";
 
 export default function Page() {
   return (
@@ -93,12 +94,67 @@ const nextConfig = {
         ]}
       />
 
+      <H3>实战：三类错误，分别用哪个工具</H3>
+      <P>
+        <code>get_errors</code> 是这套 MCP 里最常用的调试工具，但它<strong>有盲区</strong>——
+        并非所有错误都能在它里面看到。下面这张表是踩坑后总结的覆盖范围：
+      </P>
+      <ApiTable
+        columns={["错误类型", "get_errors", "看不到时找谁"]}
+        rows={[
+          ["编译 / 语法错误", "✅ 抓到（带 source-map，定位到行:列）", "—"],
+          ["server 运行时错误", "❌ 抓不到（被 error.tsx 吞成 HTTP 200）", "get_logs → dev 日志（source: Server）"],
+          ["browser 运行时错误", "✅ 抓到（真 JS 调用栈 + 组件树）", "—"],
+        ]}
+      />
+      <P>
+        其中 <strong>browser 运行时错误</strong> 最有价值——返回的是结构化的组件调用栈，
+        AI 拿到就能直接定位，无需肉眼解析终端红字：
+      </P>
+      <CodeBlock
+        title="get_errors 返回（browser runtime，节选）"
+        code={`{
+  "url": "/react19/compiler",
+  "runtimeErrors": [{
+    "type": "runtime",
+    "errorName": "Error",
+    "message": "FilteredList render 抛错",
+    "stack": [
+      { "file": "compiler-demo.tsx", "methodName": "FilteredList",  "line": 23 },
+      { "file": "compiler-demo.tsx", "methodName": "CompilerDemo",  "line": 60 },
+      { "file": "page.tsx",           "methodName": "Page",          "line": 70 }
+    ]
+  }]
+}`}
+      />
+      <Callout variant="warning" title={`最大的坑：server 错误会"藏"起来`}>
+        server component 里 <code>throw</code> 在 dev 下会被 <code>error.tsx</code> 边界捕获，<strong>HTTP 仍是 200</strong>，
+        <code>get_errors</code> 也看不到。这类错误只在 <code>get_logs</code> 返回的 dev 日志里（<code>source: Server</code>）。
+        页面"看着正常却行为异常"时，第一时间 <code>get_logs</code>。
+      </Callout>
+      <Demo title="调试决策树" description="出错时按这个顺序找工具：">
+        <pre className="overflow-x-auto rounded-lg bg-[#0b0e14] p-3 font-mono text-[11px] leading-5 text-zinc-300">
+{`编译挂了 / 直接 500          → get_errors        （build error，带 source-map）
+页面 200 但白屏 / 行为异常    → 先 get_errors → 空的？→ get_logs （server runtime 藏在这）
+某页渲染了哪些层 / 为何动态   → get_page_metadata
+全站路由 / Action 在哪定义    → get_routes / get_server_action_by_id`}
+        </pre>
+      </Demo>
+
+      <Demo
+        title="亲手试：触发一个 browser 运行时错误"
+        description="只有 browser 运行时错误能在浏览器里真实触发。点按钮让组件渲染时 throw，对照「页面里人眼看到的」与「MCP get_errors 看到的结构化数据」；编译错误 / server 运行时无法在此触发，覆盖范围见上方对照表。"
+      >
+        <McpErrorDemo />
+      </Demo>
+
       <KeyPoints
         points={[
           "Turbopack 稳定且默认；配置在顶层 turbopack。",
           "turbopackFileSystemCacheForDev 跨重启加速（beta）。",
           "dev 日志拆 Compile/Render；build 每步计时。",
           "Devtools MCP 把应用上下文喂给 AI，辅助调试与升级。",
+          "get_errors 抓编译 / browser 运行时错误；server 运行时错误要靠 get_logs。",
         ]}
       />
       <Source>参考：Next.js「Turbopack」「Next.js MCP Server」「Upgrading: Version 16」。</Source>

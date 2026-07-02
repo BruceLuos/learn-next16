@@ -20,7 +20,7 @@ function FilteredList({
   renderCountRef: React.RefObject<number>;
 }) {
   renderCountRef.current += 1;
-  if (data.length > 0) throw new Error("MCP demo: 浏览器运行时错误（render 期抛）");
+    if (data.length > 0) throw new Error("MCP demo: 浏览器运行时错误（render 期抛）");
   const filtered = data.filter((d) => d.includes(query));
   return (
     <ul className="max-h-40 space-y-0.5 overflow-auto rounded-lg bg-muted/40 p-2 font-mono text-[11px]">
