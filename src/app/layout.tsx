@@ -4,6 +4,11 @@ import { Sidebar, MobileSidebar } from "@/components/sidebar";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 export const metadata: Metadata = {
+  // 解析 OG / Twitter 图片的基准 URL，避免 Next 用 localhost 兜底告警；
+  // 部署时设 NEXT_PUBLIC_SITE_URL 为正式域名即可。
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  ),
   title: {
     default: "Next.js 16 交互式学习手册",
     template: "%s · Next.js 16 手册",

@@ -1,5 +1,6 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu, BookOpen } from "lucide-react";
@@ -94,7 +95,11 @@ export function Sidebar() {
     <aside className="sticky top-0 hidden h-dvh w-64 shrink-0 border-r border-border bg-background/60 lg:block">
       <Brand />
       <ScrollArea className="h-[calc(100dvh-65px)]">
-        <NavList />
+        {/* usePathname() 属请求级动态数据，cacheComponents 下需 Suspense 边界
+            以免阻塞 /routing/intercepting/[slug] 等动态路由的预渲染 */}
+        <Suspense fallback={null}>
+          <NavList />
+        </Suspense>
       </ScrollArea>
     </aside>
   );
@@ -119,7 +124,9 @@ export function MobileSidebar() {
         <SheetTitle className="sr-only">课程导航</SheetTitle>
         <Brand />
         <ScrollArea className="h-[calc(100dvh-65px)]">
-          <NavList onNavigate={() => setOpen(false)} />
+          <Suspense fallback={null}>
+            <NavList onNavigate={() => setOpen(false)} />
+          </Suspense>
         </ScrollArea>
       </SheetContent>
     </Sheet>
